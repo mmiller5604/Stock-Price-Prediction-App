@@ -7,14 +7,19 @@ from tensorflow.keras.layers import LSTM, Dropout, Dense
 import plotly.graph_objs as go
 import streamlit as st
 from datetime import timedelta
+from sklearn.metrics import mean_absolute_error
+mae = mean_absolute_error(real_prices, predicted_prices)
+from sklearn.metrics import mean_squared_error
+rmse = np.sqrt(mean_squared_error(real_prices, predicted_prices))
+mape = np.mean(np.abs((real_prices - predicted_prices) / real_prices)) * 100
 
 # Streamlit UI
 st.title("📈 Stock Price Prediction Algorithm")
 ticker = st.text_input("Enter Stock Ticker (e.g., TSLA)", value="TSLA")
 start_date = st.date_input("Start Date", value=pd.to_datetime("2025-01-01"))
-end_date = st.date_input("End Date", value=pd.to_datetime("2025-04-20"))
-prediction_days = st.slider("How many days into the future to predict?", min_value=1, max_value=7, value=3)
-show_full_price = st.checkbox("Show Full Historical Price Line", value=False)
+end_date = st.date_input("End Date", value=pd.to_datetime("2025-04-13"))
+prediction_days = st.slider("How many days into the future to predict?", min_value=1, max_value=30, value=5)
+show_full_price = st.checkbox("Show Full Historical Price Line", value=True)
 
 if st.button("Predict"):
     history_buffer = timedelta(days=365 * 5)  # 5 years
@@ -98,4 +103,7 @@ if st.button("Predict"):
 
         st.plotly_chart(fig, use_container_width=True)
         st.success("Prediction complete!")
-
+        st.subheader(\"📊 Model Performance Metrics\")
+        st.write(f\"**MAE:** {mae:.2f}\")
+        st.write(f\"**RMSE:** {rmse:.2f}\")
+        st.write(f\"**MAPE:** {mape:.2f}%\")
