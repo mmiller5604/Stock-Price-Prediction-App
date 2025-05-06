@@ -11,10 +11,10 @@ from datetime import timedelta
 # Streamlit UI
 st.title("📈 Stock Price Prediction Algorithm")
 ticker = st.text_input("Enter Stock Ticker (e.g., TSLA)", value="TSLA")
-start_date = st.date_input("Start Date", value=pd.to_datetime("2019-01-01"))
-end_date = st.date_input("End Date", value=pd.to_datetime("2024-12-31"))
-prediction_days = st.slider("How many days into the future to predict?", min_value=1, max_value=30, value=5)
-show_full_price = st.checkbox("Show Full Historical Price Line", value=True)
+start_date = st.date_input("Start Date", value=pd.to_datetime("2025-01-01"))
+end_date = st.date_input("End Date", value=pd.to_datetime("2025-04-20"))
+prediction_days = st.slider("How many days into the future to predict?", min_value=1, max_value=7, value=3)
+show_full_price = st.checkbox("Show Full Historical Price Line", value=False)
 
 if st.button("Predict"):
     history_buffer = timedelta(days=365 * 5)  # 5 years
