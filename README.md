@@ -18,5 +18,5 @@ This Streamlit app uses an LSTM neural network to predict stock prices based on 
 pip install -r requirements.txt
 
 # Run the app
-streamlit run stock_app.py
+streamlit run stock_bot.py
 ```
