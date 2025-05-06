@@ -2,26 +2,23 @@ import yfinance as yf
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dropout, Dense
 import plotly.graph_objs as go
 import streamlit as st
 from datetime import timedelta
-from sklearn.metrics import mean_absolute_error
-mae = mean_absolute_error(real_prices, predicted_prices)
-from sklearn.metrics import mean_squared_error
-rmse = np.sqrt(mean_squared_error(real_prices, predicted_prices))
-mape = np.mean(np.abs((real_prices - predicted_prices) / real_prices)) * 100
 
 # Streamlit UI
-st.title("📈 Stock Price Prediction Algorithm")
+st.title("📈 Stock Price Prediction")
 ticker = st.text_input("Enter Stock Ticker (e.g., TSLA)", value="TSLA")
-start_date = st.date_input("Start Date", value=pd.to_datetime("2025-01-01"))
-end_date = st.date_input("End Date", value=pd.to_datetime("2025-04-13"))
+start_date = st.date_input("Start Date", value=pd.to_datetime("2019-01-01"))
+end_date = st.date_input("End Date", value=pd.to_datetime("2024-12-31"))
 prediction_days = st.slider("How many days into the future to predict?", min_value=1, max_value=30, value=5)
 show_full_price = st.checkbox("Show Full Historical Price Line", value=True)
 
 if st.button("Predict"):
+    # Extend training data to include more history before start_date
     history_buffer = timedelta(days=365 * 5)  # 5 years
     training_start_date = pd.Timestamp(start_date) - history_buffer
 
@@ -73,18 +70,22 @@ if st.button("Predict"):
         for i in range(prediction_days):
             next_pred = model.predict(future_inputs)
             future_preds.append(next_pred[0][0])
-            # Append the prediction to the inputs for next prediction
             next_pred_reshaped = next_pred.reshape(1, 1, 1)
             future_inputs = np.concatenate((future_inputs[:, 1:, :], next_pred_reshaped), axis=1)
             future_dates.append(last_date + timedelta(days=i+1))
 
-        # Filter to only display predictions from user-selected start_date onward
+        # Filter predictions from selected start_date onward
         visible_indices = [i for i, date in enumerate(dates_test) if date >= pd.Timestamp(start_date)]
         visible_dates = [dates_test[i] for i in visible_indices]
         visible_real = real_prices[visible_indices]
         visible_pred = predicted_prices[visible_indices]
 
-        # Full real price line for context
+        # Error Metrics
+        mae = mean_absolute_error(visible_real, visible_pred)
+        rmse = np.sqrt(mean_squared_error(visible_real, visible_pred))
+        mape = np.mean(np.abs((visible_real - visible_pred) / visible_real)) * 100
+
+        # Full real price line
         df['Close_Scaled'] = scaler.inverse_transform(scaled_data)
 
         # Plotly Chart
@@ -93,6 +94,20 @@ if st.button("Predict"):
             fig.add_trace(go.Scatter(x=df.index, y=df['Close_Scaled'], mode='lines', name='Full Price (Actual)', line=dict(color='gray', width=1, dash='dot')))
         fig.add_trace(go.Scatter(x=visible_dates, y=visible_real.flatten(), mode='lines', name='Real Price'))
         fig.add_trace(go.Scatter(x=visible_dates, y=visible_pred.flatten(), mode='lines', name='Predicted Price'))
+
+        # Confidence Band (using RMSE as margin)
+        upper_bound = visible_pred.flatten() + rmse
+        lower_bound = visible_pred.flatten() - rmse
+        fig.add_trace(go.Scatter(
+            x=visible_dates + visible_dates[::-1],
+            y=np.concatenate([upper_bound, lower_bound[::-1]]),
+            fill='toself',
+            fillcolor='rgba(255,165,0,0.2)',
+            line=dict(color='rgba(255,255,255,0)'),
+            hoverinfo='skip',
+            name='Confidence Band'))
+
+        # Future predictions
         fig.add_trace(go.Scatter(x=future_dates, y=scaler.inverse_transform(np.array(future_preds).reshape(-1, 1)).flatten(), mode='lines+markers', name='Future Prediction', line=dict(color='orange', dash='dash')))
 
         fig.update_layout(title=f"Predicted vs Real Stock Prices for {ticker}",
@@ -102,8 +117,11 @@ if st.button("Predict"):
                           height=500)
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # Display error metrics
+        st.subheader("📊 Model Performance Metrics")
+        st.write(f"**MAE:** {mae:.2f}")
+        st.write(f"**RMSE:** {rmse:.2f}")
+        st.write(f"**MAPE:** {mape:.2f}%")
+
         st.success("Prediction complete!")
-    st.subheader(\"📊 Model Performance Metrics\")
-    st.write(f\"**MAE:** {mae:.2f}\")        
-    st.write(f\"**RMSE:** {rmse:.2f}\")
-    st.write(f\"**MAPE:** {mape:.2f}%\")
