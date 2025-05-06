@@ -103,7 +103,7 @@ if st.button("Predict"):
 
         st.plotly_chart(fig, use_container_width=True)
         st.success("Prediction complete!")
-        st.subheader(\"📊 Model Performance Metrics\")
-        st.write(f\"**MAE:** {mae:.2f}\")
-        st.write(f\"**RMSE:** {rmse:.2f}\")
-        st.write(f\"**MAPE:** {mape:.2f}%\")
+    st.subheader(\"📊 Model Performance Metrics\")
+    st.write(f\"**MAE:** {mae:.2f}\")        
+    st.write(f\"**RMSE:** {rmse:.2f}\")
+    st.write(f\"**MAPE:** {mape:.2f}%\")
